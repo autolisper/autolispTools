@@ -1,7 +1,7 @@
 (defun getMillseconds ( )
   (getvar "MILLISECS")  
 )
-(defun movecircle ( / *actdoc* mspace pt1 mycircle i newcenter)
+(defun movecircle ( / *actdoc* mspace pt1 mycircle i newcenter start vy x y vx sa pre now)
   (setq *actdoc* (vla-get-activedocument (vlax-get-acad-object)))
   (setq mspace (vla-get-modelspace *actdoc*))
   (setq pt1 (getpoint))  

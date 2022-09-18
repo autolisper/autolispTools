@@ -27,7 +27,7 @@
   (setvar "OSMODE" OldOsmode)
   (setvar "CMDECHO" OldCmdEcho)
 )
-(defun c:qtrim ( / l0 l1 lt)
+(defun c:qtrim ( / l0 l1 lt isok)
   (A_start)
   (setq isok T)  
   (while isok

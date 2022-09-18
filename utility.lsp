@@ -280,7 +280,7 @@
   (vlax-curve-getDistAtParam item (vlax-curve-getEndParam item))
 )
 ;ename list to select set
-(defun toSet(nL / ss)
+(defun toSet(nL / ss item)
   (setq ss (ssadd))
   (foreach item nL
     (setq ss (ssadd item ss))
@@ -419,7 +419,7 @@
   )
   angleL
 )
-(defun getEllipseQuadrantPoint(o / angleL center vecx vecy radio sA eA pairList i)
+(defun getEllipseQuadrantPoint(o / angleL center vecx vecy ratio sA eA pairList i)
   (setq angleL nil)
   (setq center (getCenter o))
   (setq ratio (A_dxf 40 o))
@@ -463,7 +463,7 @@
   (setq RANDOM_SEED (rem (* 48271.0 RANDOM_SEED) 2147483647.0))
   (fix (rem RANDOM_SEED maxi))
 )
-(defun getseconds ( )
+(defun getseconds ( / s)
   (setq s (getvar "DATE"))
   (fix (* 86400.0 (- s (fix s))))
 )

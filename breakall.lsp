@@ -25,7 +25,7 @@
   ret
 )
 ;;break closed
-(defun breakCircle (ename p0 p1 / elist)
+(defun breakCircle (ename p0 p1 / elist center)
   (setq center (A_dxf 10 ename))
   (command-s "._arc" "C" center p0 p1)
   (setq elist (cons (entlast) elist))
