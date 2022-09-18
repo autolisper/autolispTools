@@ -1,4 +1,5 @@
 ;;must load utility.lsp at first
+;;define breakbyobject and breakbyline
 
 (defun isEndPoint (p ename / s e)
   (if (vlax-curve-isClosed ename)
@@ -33,13 +34,71 @@
   (vla-delete (vlax-ename->vla-object ename))
   elist  
 )
-(defun breakPolyLineClosed (ename p0 p1)
-  (princ "closed polyline cut is not implemented")
-  nil
+(defun _getCurveD (ename p0 p1)
+  (+ (getD (vlax-curve-getstartpoint ename) p0) (getD (vlax-curve-getendpoint ename) p1))
 )
-(defun breakSplineClosed (ename p0 p1)
-  (princ "closed spline cut is not implemented")
-  nil
+(defun getCurveD (ename p0 p1)
+  (min (_getCurveD ename p0 p1) (_getCurveD ename p1 p0))
+)
+(defun getClosestCurve (ename0 ename1 p0 p1)
+  (if (< (getCurveD ename0 p0 p1) (getCurveD ename1 p0 p1))
+      ename0
+      ename1
+  )
+)
+(defun getOneOfBreakCurve (ename p0 p1 breakpoint0 breakpoint1 breakpoint2 / ename2 oename1)  
+
+  (command-s "._break" ename breakpoint0 breakpoint1)    
+  (command-s "._break" ename breakpoint2 breakpoint2)  
+  ; (command "._break" ename)
+  ; (command breakpoint0)
+  ; (command breakpoint1)
+  ; (command "._break" ename)
+  ; (command breakpoint2)
+  ; (command breakpoint2)    
+  (setq ename2 (entlast))
+  (setq oename1 (getClosestCurve ename ename2 p0 p1))
+  (if (equal oename1 ename)
+    (vla-delete (vlax-ename->vla-object ename2))
+    (vla-delete (vlax-ename->vla-object ename))
+  )
+  oename1  
+)
+(defun breakPolyLineClosed (ename p0 p1 / sp ep tmp start end ename1 ename2 oename1 oename2)
+  (setq sp (vlax-curve-getparamatpoint ename p0))
+  (setq ep (vlax-curve-getparamatpoint ename p1))
+  (setq start (vlax-curve-getstartparam ename))
+  (setq end (vlax-curve-getendparam ename))
+  (if (< ep sp)
+      (progn
+        (setq tmp sp)        
+        (setq sp ep)
+        (setq ep tmp)
+        (setq tmp p0)        
+        (setq p0 p1)
+        (setq p1 tmp)
+      )
+  )
+  (cond ((and (= sp start) (= ep end)) nil)
+        ((= sp start) 
+          (progn            
+            (entmake (entget ename))
+            (setq ename1 (entlast))
+            (setq oename1 (getOneOfBreakCurve ename p0 p1 (vlax-curve-getpointatparam ename (max sp (- ep 0.00000001) )) p1 p0))
+            (setq oename2 (getOneOfBreakCurve ename1 p0 p1 (vlax-curve-getpointatparam ename1 (min end (+ ep 0.00000001) )) p1 p0))
+            (list oename1 oename2)            
+          )
+        )
+        ;((= ep end) nil) same as below
+        (T (progn
+            (entmake (entget ename))
+            (setq ename1 (entlast))
+            (setq oename1 (getOneOfBreakCurve ename p0 p1 (vlax-curve-getpointatparam ename (max start (- sp 0.00000001) )) p0 p1))
+            (setq oename2 (getOneOfBreakCurve ename1 p0 p1 (vlax-curve-getpointatparam ename1 (min ep (+ sp 0.00000001) )) p0 p1))
+            (list oename1 oename2)            
+           )
+        )
+  )
 )
 (defun breakEllipse (ename p0 p1 / e0 sp ep )    
   (setq sp (vlax-curve-getparamatpoint ename p0))
@@ -53,7 +112,7 @@
   (cond 
     ((= etype "CIRCLE") (breakCircle ename p0 p1))
     ((= etype "LWPOLYLINE")(breakPolyLineClosed ename p0 p1))
-    ((= etype "SPLINE") (breakSplineClosed ename p0 p1))
+    ((= etype "SPLINE") (progn (princ "closed spline is not implemented") nil)); (breakPolyLineClosed ename p0 p1))s
     ((= etype "ELLIPSE") (breakEllipse ename p0 p1))
   )
 )
@@ -95,21 +154,7 @@
     )
   )
 )
-(defun getIntersectPoints (ename0 ename / intPoints tempPoint pl)
-  (setq intPoints (vla-IntersectWith (vlax-ename->vla-object ename0) (vlax-ename->vla-object ename) acExtendNone))         
-  (if (/= (type intPoints) vlax-vbEmpty)        
-      (progn
-        (setq tempPoint (vlax-safearray->list (vlax-variant-value intPoints)))  ;交点リストを取得
-        (while tempPoint
-          (setq
-            pl (cons (list (car tempPoint) (cadr tempPoint) (caddr tempPoint)) pl)
-            tempPoint (cdddr tempPoint)
-          )
-        )
-      )
-  )
-  pl
-)
+
 (defun breakobject ( cutename ename / intPoints tempPoint pl)  
   (setq pl (getIntersectPoints cutename ename))
   (if pl
@@ -117,7 +162,7 @@
   )
 )
     
-(defun _breakall ( fp sp sset / doc modelSpace lineObj intPoints enameList ename lineE)
+(defun _breakbyline ( fp sp sset / doc modelSpace lineObj intPoints enameList ename lineE)
   (setq doc (vla-get-ActiveDocument (vlax-get-acad-object)))  
   (setq fp (vlax-3d-point fp)
           sp (vlax-3d-point sp))   
@@ -130,7 +175,21 @@
   )
   (vla-delete lineObj)
 )
-(defun c:breakall ( / fp sp sset oldsmode)
+(defun c:breakbyobject ( / ename0 ename1 enamelist)
+  (A_start)
+  (while (not ename0)    
+    (setq ename0 (car (entsel "select cutting object:")))
+    (princ "\n")
+  )  
+  (while (not enamelist)    
+    (setq enamelist (getNameList (ssget  '((0 . "ARC,CIRCLE,LINE,LWPOLYLINE,SPLINE,ELLIPSE")))))    
+  )
+  (foreach ename1 enamelist
+    (breakobject ename0 ename1)
+  )
+  (A_end)
+)
+(defun c:breakbyline ( / fp sp sset oldsmode)
   (A_start)
   (setq fp nil)
   (setq sp nil)
@@ -151,6 +210,6 @@
     )
   )    
   (setq sset (ssget "F" (list fp sp) '((0 . "ARC,CIRCLE,LINE,LWPOLYLINE,SPLINE,ELLIPSE"))))  
-  (_breakall fp sp sset)    
+  (_breakbyline fp sp sset)    
   (A_end) 
 )
