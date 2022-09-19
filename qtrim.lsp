@@ -28,6 +28,12 @@
   (setvar "CMDECHO" OldCmdEcho)
 )
 (defun c:qtrim ( / l0 l1 lt isok)
+  (if (not ISLOADUTILITY_LSP)
+    (progn 
+      (prompt "you must load utility.lsp\n")
+      (quit)
+    )
+  )  
   (A_start)
   (setq isok T)  
   (while isok

@@ -1,4 +1,5 @@
 
+(setq ISLOADUTILITY_LSP T)
 (setq CUSTOMEQUALQUALITY 0.00000001)
 ;common command
 (defun saveVar()
