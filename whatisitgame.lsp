@@ -196,7 +196,7 @@
   (setq t0 (+L point0 (list (/ l 10.0) (/ l 10.0) 0.0)))
   (setq tpoint (list (+ minx (* l 0.15)) (+ miny (* l 0.15)) 0.0))  
   (setq answertext (chr (randrange 33 127)))
-  (setq text (addTextCenter (scalarMul 0.5 (+L point0 point1)) (* l 0.9) answertext));)vla-addtext (modelspace)  answertext (vlax-3d-point tpoint) (* l 0.7)))  
+  (setq text (addTextCenter (scalarMul 0.5 (+L point0 point1)) (* l 0.8) answertext));)vla-addtext (modelspace)  answertext (vlax-3d-point tpoint) (* l 0.7)))  
   (setq corners (getCornerPoint point0 point1))
   (setq lines (getClosedLines corners))   
   (setq plines (getClosedLines (getPlayerTriangle t0 playerl ang hang)))
