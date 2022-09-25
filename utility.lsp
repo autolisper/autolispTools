@@ -456,17 +456,55 @@
   )
 )
 ;random
-(setq RANDOM_SEED 0)
+(setq RANDOM_SEED 100)
 (defun randinit () 
   (setq RANDOM_SEED (getseconds))
+  (randreal 1.0)
+  (randreal 1.0)
+  (randreal 1.0)
 )
 (defun rand ( maxi ) 
-  (setq RANDOM_SEED (rem (* 48271.0 RANDOM_SEED) 2147483647.0))
-  (fix (rem RANDOM_SEED maxi))
+  (fix (randreal maxi))  
+)
+(defun randreal (maxi)
+  (setq RANDOM_SEED (rem (* 48271.0 RANDOM_SEED) 2147483647.0))  
+  (* maxi (/ RANDOM_SEED 2147483647.0))
+)
+(defun randrealrange(mini maxi)
+  (+ mini (randreal (- maxi mini)))
+)
+(defun randrange (mini maxi)
+  (+ mini (rand (- maxi mini)))
 )
 (defun getseconds ( / s)
   (setq s (getvar "DATE"))
   (fix (* 86400.0 (- s (fix s))))
 )
+;for active-x
+(setq *acadobject* nil) ; Initialize global variable
+(defun acadobject ()
+  (cond (*acadobject*) ; Return the cached object
+    (t
+      (setq *acadobject* (vlax-get-acad-object))
+    )
+  )
+)
 
+(setq *activedocument* nil) ; Initialize global variable
+(defun activedocument ()
+  (cond (*active-document*) ; Return the cached object
+    (t
+      (setq *activedocument* (vla-get-activedocument (acadobject)))
+    )
+  )
+)
+
+(setq *modelspace* nil) ; Initialize global variable
+(defun modelspace ()
+  (cond (*modelspace*) ; Return the cached object
+    (t
+      (setq *modelspace* (vla-get-modelspace (activedocument)))
+    )
+  )
+)
 (princ)

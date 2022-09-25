@@ -25,7 +25,7 @@
 (defun c:tangentpointcircle ( / doc modelSpace point r ename normal point2 center $_device $_code $data flag circleObj)
   (if (not ISLOADUTILITY_LSP)
     (progn 
-      (prompt "you must load utility.lsp\n")
+      (alert "you must load utility.lsp\n")
       (quit)
     )
   )  

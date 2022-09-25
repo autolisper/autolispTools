@@ -23,7 +23,7 @@
 (defun c:wipegame ( / i j x0 y0 x1 y1 point0 point1 size gamearray point left down right up sizei sizej num fieldlines cellsize rsize circles l) 
   (if (not ISLOADUTILITY_LSP)
     (progn 
-      (prompt "you must load utility.lsp\n")
+      (alert "you must load utility.lsp\n")
       (quit)
     )
   )  

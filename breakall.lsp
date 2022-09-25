@@ -178,7 +178,7 @@
 (defun c:breakbyobject ( / ename0 ename1 enamelist)
   (if (not ISLOADUTILITY_LSP)
     (progn 
-      (prompt "you must load utility.lsp\n")
+      (alert "you must load utility.lsp\n")
       (quit)
     )
   )  
