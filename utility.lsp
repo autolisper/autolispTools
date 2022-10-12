@@ -98,6 +98,22 @@
             (setq SD_List (mapcar 'vl-list->string DataN))
             SD_List
         )
+(defun HL:splitWith (SD_Str character / DataTemp m DataS DataN SD_List)
+            (setq DataTemp (vl-string->list SD_Str))
+            (setq m 0)
+            (repeat (length DataTemp)
+            (if     (/= (nth m DataTemp) (ascii character))
+                (setq DataS (append DataS (list (nth m DataTemp))))
+                (progn  (setq DataN (append DataN (list DataS)))
+                        (setq DataS nil)
+                )
+            )
+            (setq m (1+ m))
+            )
+            (setq DataN (append DataN (list DataS)))
+            (setq SD_List (mapcar 'vl-list->string DataN))
+            SD_List
+        )
 ;take num from head
 (defun HL:take (pL num)
   (if (or (not pL) (= num 0))
