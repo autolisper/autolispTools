@@ -34,6 +34,12 @@
   )
 )
 (defun c:makeblockall ( / selectset ent allblocklist tmp myset point)
+  (if (not HL:ISLOADUTILITY_LSP)
+    (progn 
+      (alert "you must load utility.lsp\n")
+      (quit)
+    )
+  )  
   (HL:A_start)
   (setq selectset (HL:getNameList (ssget '((0 . "ARC,CIRCLE,LINE,LWPOLYLINE,SPLINE,ELLIPSE")))))
   (foreach ent selectset    
