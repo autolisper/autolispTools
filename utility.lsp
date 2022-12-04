@@ -538,11 +538,51 @@
     )
   )
 )
+(setq HL:*utility* nil) ; Initialize global variable
+(defun HL:utility ()
+  (cond (HL:*utility*) ; Return the cached object
+    (t
+      (setq HL:*utility* (vla-get-utility (HL:activedocument)))
+    )
+  )
+)
+(defun HL:_getpointW (point message) 
+  (if point
+      (setq point (vlax-3d-point point))
+  )
+  (vlax-safearray->list (vlax-variant-value (vla-GetPoint (HL:utility) point message)))
+)
+(defun HL:getpointW (point message / ret)  
+   (setq ret (vl-catch-all-apply 'HL:_getpointW (list point message)) )
+   (if (vl-catch-all-error-p ret)
+    nil
+    ret
+  )
+)
+(defun HL:_getcornerW (point message) 
+  (if point
+      (setq point (vlax-3d-point point))
+  )
+  (vlax-safearray->list (vlax-variant-value (vla-GetCorner (HL:utility) point message)))
+)
+(defun HL:getcornerW (point message / ret)  
+   (setq ret (vl-catch-all-apply 'HL:_getcornerW (list point message)) )
+   (if (vl-catch-all-error-p ret)
+    nil
+    ret
+  )
+)
 (defun HL:drawCircle ( vertex r)
   (vla-addcircle (HL:modelspace) (vlax-3d-point vertex) r)
 )
 (defun HL:drawLine ( vertex0 vertex1 )
-  (vla-AddLine (HL:modelSpace) (vlax-3d-point vertex0) (valx-3d-point vertex1))  
+  (vla-AddLine (HL:modelSpace) (vlax-3d-point vertex0) (vlax-3d-point vertex1))  
+)
+(defun HL:addTextCenter (point size text / textobject)
+  (setq textobject (vla-addtext (HL:modelspace) text (vlax-3d-point point) size))  
+  (vla-put-alignment textobject acAlignmentMiddle)
+  (vla-put-TextAlignmentPoint textobject (vlax-3d-point point))
+  textobject
 )
 (defun HL:drawRectangle ( v0 v1 / minx miny maxx maxy)
   (setq minx (min (car v0) (car v1)))

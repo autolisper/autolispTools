@@ -138,12 +138,7 @@
   (setq lines (HL:getRectLines point (HL:+L point size)))
   (list (list minx maxx miny maxy) (cons textobject lines))  
 )
-(defun HL:addTextCenter (point size text / textobject)
-  (setq textobject (vla-addtext (HL:modelspace) text (vlax-3d-point point) size))  
-  (vla-put-alignment textobject acAlignmentMiddle)
-  (vla-put-TextAlignmentPoint textobject (vlax-3d-point point))
-  textobject
-)
+
 (defun HL:isInButton (point button / minx maxx miny maxy x y plist) 
   (setq plist (car button))
   (setq minx (car plist))
