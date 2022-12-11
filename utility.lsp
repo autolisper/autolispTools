@@ -639,4 +639,13 @@
   (setq maxpt (list (car maxpt) (cadr maxpt)))
   (cons minpt maxpt)
 )
+(defun HL:removeNth (i ns)
+  (if (not ns)
+      nil
+     (if (= i 0)
+       (cdr ns)
+        (cons (car ns) (HL:removeNth (1- i) (cdr ns)))
+      )
+  )
+)
 (princ)
