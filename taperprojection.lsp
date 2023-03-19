@@ -1,3 +1,4 @@
+(setq HL:TAPERPROJECTIONSPLITNUM 100)
 (defun HL:projection (p a innerpoint / p0 p1 center0 r0 center1 r1 e eright eleft z0 z1 interpoints ansp1 ansp0 tp)
   (setq p0 (car p))
   (setq p1 (cdr p))
@@ -19,7 +20,10 @@
   (setq center1 (list (car p1) (cadr p1)))
   (setq r0 (HL:getD center0 center1))
   (setq r1 (* (- z1 z0) tana))
-  (setq interpoints (HL:getCircleIntersectPoints center0 r0 center1 r1))
+  (if (HL:eqr r1 0.0)
+      (setq interpoints (cons center1 center1))
+      (setq interpoints (HL:getCircleIntersectPoints center0 r0 center1 r1))
+  )  
   (setq left (car interpoints))
   (setq right (cdr interpoints))
   (setq e (HL:lengthV (HL:-L center1 center0) (* z0 tana)))
@@ -38,11 +42,45 @@
       )
   )  
 )
-(defun HL:getObjectPoints (o / otype ans)  
-  (list (vlax-curve-getstartpoint o) (vlax-curve-getendpoint o))
+(defun HL:getCircleSplitPoints ( o / num start end points)
+  (setq num HL:TAPERPROJECTIONSPLITNUM)
+  (setq end (vlax-curve-getendparam o))
+  (setq start (vlax-curve-getstartparam o))
+  (setq ds (/ (- end start) num))
+  (setq i 0)
+  (repeat num
+    (setq points (cons (vlax-curve-getpointatparam o (+ start (* ds i))) points)) 
+    (setq i (1+ i))
+  )
+  (setq points (cons (vlax-curve-getendpoint o) points))
+  (reverse points)
 )
-(defun HL:_taperprojectionObject (object innerpoint a zoffset / points pointpairs)
+(defun HL:getPolySplitPoints ( o / num start end points)
+  (setq end (vlax-curve-getendparam o))
+  (setq start (vlax-curve-getstartparam o))
+  (setq num (fix (- end start)))
+  (setq ds (/ (- end start) num))
+  (setq i 0)
+  (repeat num
+    (setq points (cons (vlax-curve-getpointatparam o (+ start (* ds i))) points)) 
+    (setq i (1+ i))
+  )
+  (setq points (cons (vlax-curve-getendpoint o) points))
+  (reverse points)  
+
+)
+(defun HL:getObjectPoints (o / otype ans)  
+  (setq otype (HL:getType o))
+  (cond
+    ((= otype "LINE") (list (vlax-curve-getstartpoint o) (vlax-curve-getendpoint o)))
+    ((= otype "POLYLINE") (HL:getPolySplitPoints o))
+    ((= otype "LWPOLYLINE") (HL:getPolySplitPoints o))
+    (T (HL:getCircleSplitPoints o))
+  )  
+)
+(defun HL:_taperprojectionObject (object innerpoint a zoffset / points pointpairs)  
   (setq zoffset (list 0.0 0.0 zoffset))
+  ;get points from object
   (setq points (HL:getObjectPoints object))  
   ;zoffset 
   (setq points (mapcar '(lambda (p) (HL:-L p zoffset)) points))
@@ -52,7 +90,7 @@
   ;draw lines
   (mapcar '(lambda (pair) (HL:drawLine (car pair) (cdr pair))) pointpairs)
 )
-(defun c:taperprojection ( / objects a zoffset object points pointpairs innerpoint)
+(defun c:taperprojection ( / objects a zoffset object points pointpairs innerpoint)  
   (if (not HL:ISLOADUTILITY_LSP)
     (progn 
       (alert "you must load utility.lsp\n")
@@ -62,28 +100,23 @@
   (HL:A_start)
   ;get Objects
   (while (not objects)
-    (setq objects (ssget "LINEOBJECTS:"))
-  )  
+    (setq objects (ssget '((0 . "ARC,CIRCLE,LINE,LWPOLYLINE,SPLINE,ELLIPSE,POLYLINE"))))
+  )    
   (setq objects (HL:getNameList objects))
   (while (not innerpoint)
     (setq innerpoint (getpoint "innerpoint:"))
   )
   (while (not a)
-    (setq a (getangle "angle:"))
+    (setq a (getreal "angle:"))
   )
   ;get zoffset
   (while (not zoffset)
     (setq zoffset (getreal "zoffset:"))
   )
   ;for objects
-  (foreach object objects
-    ;get points from object
-    (setq points (HL:getObjectPoints object))
-    ;zoffset 
-    (setq points (mapcar '(lambda (p) (HL:-L p zoffset))))
-    (setq pointpairs (HL:makepair pointpairs))
+  (foreach object objects        
     ;change points to projection point and drawLines
-    (HL:_taperprojectionObject (object innerpoint a zoffset))
+    (HL:_taperprojectionObject object innerpoint a zoffset)
   )          
   (HL:A_end)
 )
