@@ -1,5 +1,5 @@
 (setq HL:TAPERPROJECTIONSPLITNUM 100)
-(defun HL:projection (p a innerpoint / p0 p1 center0 r0 center1 r1 e eright eleft z0 z1 interpoints ansp1 ansp0 tp)
+(defun HL:projection (p a innerpoint / p0 p1 center0 r0 center1 r1 e eright eleft z0 z1 interpoints ansp1 ansp0 tp isflip)
   (setq p0 (car p))
   (setq p1 (cdr p))
   (setq z0 (caddr p0))
@@ -12,6 +12,7 @@
         (setq tp z0)
         (setq z0 z1)
         (setq z1 tp)
+        (setq isflip T)
       )
   )
   (setq tana (tan (HL:deg2rad a)))
@@ -33,12 +34,18 @@
       (progn
         (setq ansp0 (HL:+L center0 eright))
         (setq ansp1 (HL:+L right eright))
-        (cons ansp0 ansp1)
+        (if isflip
+          (cons ansp1 ansp0)
+          (cons ansp0 ansp1)
+        )        
       )
       (progn
         (setq ansp0 (HL:+L center0 eleft))
         (setq ansp1 (HL:+L left eleft))
-        (cons ansp0 ansp1)
+        (if isflip
+          (cons ansp1 ansp0)
+          (cons ansp0 ansp1)
+        )                
       )
   )  
 )
@@ -78,19 +85,44 @@
     (T (HL:getCircleSplitPoints o))
   )  
 )
-(defun HL:_taperprojectionObject (object innerpoint a zoffset / points pointpairs)  
-  (setq zoffset (list 0.0 0.0 zoffset))
+(defun HL:LineIntersects (linepair / lpair fl el ans p)
+  (foreach lpair linepair 
+    (setq fl (car lpair))
+    (setq el (cdr lpair))    
+    (setq p (inters (car fl) (cdr fl) (car el) (cdr el) nil))
+    (if p
+      (setq ans (cons p ans))
+    )
+  )
+  (reverse ans)
+)
+(defun HL:connectLines (lines isclosed / p linepairs points)
+  (if isclosed
+      (progn
+        (setq linepairs (HL:makepairclose lines))   
+        (setq points (HL:LineIntersects linepairs))
+        (HL:makepairclose points)
+      )
+      (progn      
+        (setq linepairs (HL:makepair lines))       
+        (setq points (HL:LineIntersects linepairs))
+        (setq points (append (list (caar lines)) points (list (cdr (last lines)) )))
+        (HL:makepair points)
+      )
+  )  
+)
+(defun HL:_taperprojectionObject (object innerpoint a / points pointpairs)    
   ;get points from object
-  (setq points (HL:getObjectPoints object))  
-  ;zoffset 
-  (setq points (mapcar '(lambda (p) (HL:-L p zoffset)) points))
+  (setq points (HL:getObjectPoints object))      
   (setq pointpairs (HL:makepair points))  
   ;change points to projection point
   (setq pointpairs (mapcar '(lambda (p) (HL:projection p a innerpoint)) pointpairs))
+  ;connect projection pointpairs
+  (setq pointpairs (HL:connectLines pointpairs (vlax-curve-isclosed (vlax-ename->vla-object object))))
   ;draw lines
   (mapcar '(lambda (pair) (HL:drawLine (car pair) (cdr pair))) pointpairs)
 )
-(defun c:taperprojection ( / objects a zoffset object points pointpairs innerpoint)  
+(defun c:taperprojection ( / objects a object points pointpairs innerpoint)  
   (if (not HL:ISLOADUTILITY_LSP)
     (progn 
       (alert "you must load utility.lsp\n")
@@ -104,19 +136,16 @@
   )    
   (setq objects (HL:getNameList objects))
   (while (not innerpoint)
-    (setq innerpoint (getpoint "innerpoint:"))
+    (setq innerpoint (getpoint "innerpoint:\n"))
   )
+  (princ)
   (while (not a)
     (setq a (getreal "angle:"))
-  )
-  ;get zoffset
-  (while (not zoffset)
-    (setq zoffset (getreal "zoffset:"))
   )
   ;for objects
   (foreach object objects        
     ;change points to projection point and drawLines
-    (HL:_taperprojectionObject object innerpoint a zoffset)
+    (HL:_taperprojectionObject object innerpoint a)
   )          
   (HL:A_end)
 )
