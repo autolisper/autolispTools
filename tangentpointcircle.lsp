@@ -5,7 +5,7 @@
 (defun HL:getNormal (ename point point2 / normal)
   (cond ( 
     (= (HL:A_dxf 0 ename) "LINE")          
-    (setq normal (HL:rotate90 (HL:-L (vlax-curve-getendPoint ename) (vlax-curve-getstartPoint ename))))              
+    (setq normal (HL:rotateright90 (HL:-L (vlax-curve-getendPoint ename) (vlax-curve-getstartPoint ename))))              
     )
     (
     (member (HL:A_dxf 0 ename) '("ARC" "CIRCLE"))          

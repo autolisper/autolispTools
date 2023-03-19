@@ -1,9 +1,9 @@
-;;must load utility.lsp at first
+;;must load utility.lsp at firsteright90
 
 (defun HL:_qtrim ( l0 l1 lt / line l0s l1s lv bnormal op OldOsmode OldCmdEcho)  
   ;calc normal
   (setq lv (HL:-L l1 l0))
-  (setq bnormal (HL:rotate90 lv))
+  (setq bnormal (HL:rotateright90 lv))
   (setq bnormal (HL:lengthV bnormal 0.1))
   ;if trimside is left side flip bnormal
   (setq op (HL:outerproduct lv (HL:-L lt l0)))

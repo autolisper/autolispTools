@@ -1,4 +1,11 @@
 
+;default
+(defun tan (x)
+    (if (not (equal 0. (cos x) 1e-10))
+        (/ (sin x) (cos x))
+    )
+)
+;
 (setq HL:ISLOADUTILITY_LSP T)
 (setq HL:CUSTOMEQUALQUALITY 0.00000001)
 ;common command
@@ -114,6 +121,7 @@
             (setq SD_List (mapcar 'vl-list->string DataN))
             SD_List
         )
+
 ;take num from head
 (defun HL:take (pL num)
   (if (or (not pL) (= num 0))
@@ -127,6 +135,14 @@
       (cons (+ (car aL) (car bL)) (HL:+L (cdr aL) (cdr bL)))
     nil
     )
+)
+;make pair from list
+(defun HL:makepair (l / )  
+    (mapcar 'cons l (cdr l))
+)
+(defun HL:makepairclose (l / nl)  
+    (setq nl (append (cdr l) (list (car l))))
+    (mapcar 'cons l nl)    
 )
 (defun HL:-L (aL bL)
   (if (and aL bL)
@@ -156,11 +172,17 @@
   (list (* (/ (car v) d) l) (* (/ (cadr v) d) l))
 )
 
-(defun HL:rotate90 (v)
+(defun HL:rotateright90 (v)
   (list (cadr v)(- 0 (car v)))
+)
+(defun HL:rotateleft90 (v)
+  (list (- 0 (cadr v)) (car v))
 )
 (defun HL:scalarMul(a aL)
   (mapcar '(lambda (x) (* a x)) aL)
+)
+(defun HL:/L(aL a)
+  (mapcar '(lambda (x) (/ x a)) aL)
 )
 (defun HL:outerproduct ( v0 v1 / )
   (- (* (car v0) (car (cdr v1))) (* (car v1) (car (cdr v0))))
@@ -394,6 +416,8 @@
 (defun HL:get270D()
   (* 1.5 pi)
 )
+(defun HL:deg2rad (d) (/ (* d pi) 180.0))
+(defun HL:rad2deg (r) (* 180.0 (/ r pi)))
 ;return point on object o at angle a
 (defun HL:getCirclePoint (o a / otype)
   (setq otype (HL:getType o))
@@ -647,5 +671,16 @@
         (cons (car ns) (HL:removeNth (1- i) (cdr ns)))
       )
   )
+)
+(defun HL:getCircleIntersectPoints (center1 r1 center2 r2 / d rc rs e1 e2 e3 right left)
+  (setq d (HL:getL (HL:-L center2 center1)))
+  (setq rc (/ (- (+ (* r1 r1) (* d d)) (* r2 r2)) (* 2 d)))
+  (setq rs (sqrt (- (* r1 r1) (* rc rc))))
+  (setq e1 (HL:/L (HL:-L center2 center1) d))
+  (setq e2 (HL:rotateleft90 e1))
+  (setq e3 (HL:rotateright90 e1))
+  (setq left (HL:+L (HL:+L center1 (HL:scalarMul rc e1)) (HL:scalarMul rs e2)))
+  (setq right (HL:+L (HL:+L center1 (HL:scalarMul rc e1)) (HL:scalarMul rs e3)))
+  (cons left right)
 )
 (princ)
