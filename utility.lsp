@@ -463,12 +463,15 @@
 (defun HL:getIntersectPoints (ename0 ename / intPoints tempPoint pl)
   (setq intPoints (vla-IntersectWith (vlax-ename->vla-object ename0) (vlax-ename->vla-object ename) acExtendNone))         
   (if (/= (type intPoints) vlax-vbEmpty)        
-      (progn
-        (setq tempPoint (vlax-safearray->list (vlax-variant-value intPoints)))  ;交点リストを取得
-        (while tempPoint
-          (setq
-            pl (cons (list (car tempPoint) (cadr tempPoint) (caddr tempPoint)) pl)
-            tempPoint (cdddr tempPoint)
+      (progn 
+        (if (not (vl-catch-all-error-p
+            (setq tempPoint (vl-catch-all-apply
+            'vlax-safearray->list (list (vlax-variant-value intPoints))))));交点リストを取得                    
+            (while tempPoint
+              (setq
+                pl (cons (list (car tempPoint) (cadr tempPoint) (caddr tempPoint)) pl)
+                tempPoint (cdddr tempPoint)
+              )
           )
         )
       )
