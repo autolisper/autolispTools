@@ -1,5 +1,5 @@
 (setq HL:TAPERPROJECTIONSPLITNUM 100)
-(defun HL:projection (p a innerpoint / p0 p1 center0 r0 center1 r1 e eright eleft z0 z1 interpoints ansp1 ansp0 tp isflip)
+(defun HL:projection (p a innerpoint / p0 p1 center0 r0 center1 r1 e eright eleft z0 z1 interpoints ansp1 ansp0 tp isflip result)
   (setq p0 (car p))
   (setq p1 (cdr p))
   (setq z0 (caddr p0))
@@ -20,34 +20,48 @@
   (setq center0 (list (car p0) (cadr p0)))
   (setq center1 (list (car p1) (cadr p1)))
   (setq r0 (HL:getD center0 center1))
+  (if (< r0 0)
+      (exit)
+  )
   (setq r1 (* (- z1 z0) tana))
   (if (HL:eqr r1 0.0)
       (setq interpoints (cons center1 center1))
-      (setq interpoints (HL:getCircleIntersectPoints center0 r0 center1 r1))
-  )  
-  (setq left (car interpoints))
-  (setq right (cdr interpoints))
-  (setq e (HL:lengthV (HL:-L center1 center0) (* z0 tana)))
-  (setq eright (HL:rotateright90 e))
-  (setq eleft (HL:rotateleft90 e))
-  (if (> 0.0 (HL:outerproduct (HL:-L center1 center0) (HL:-L innerpoint center0)))
       (progn
-        (setq ansp0 (HL:+L center0 eright))
-        (setq ansp1 (HL:+L right eright))
-        (if isflip
-          (cons ansp1 ansp0)
-          (cons ansp0 ansp1)
-        )        
-      )
-      (progn
-        (setq ansp0 (HL:+L center0 eleft))
-        (setq ansp1 (HL:+L left eleft))
-        (if isflip
-          (cons ansp1 ansp0)
-          (cons ansp0 ansp1)
-        )                
+        (setq result (vl-catch-all-apply 'HL:getCircleIntersectPoints (list center0 r0 center1 r1)))
+        (if (vl-catch-all-error-p result)
+            (setq interpoints nil)
+            (setq interpoints result)
+        )
       )
   )  
+  (if (not interpoints)
+      nil
+      (progn
+        (setq left (car interpoints))
+        (setq right (cdr interpoints))
+        (setq e (HL:lengthV (HL:-L center1 center0) (* z0 tana)))
+        (setq eright (HL:rotateright90 e))
+        (setq eleft (HL:rotateleft90 e))
+        (if (> 0.0 (HL:outerproduct (HL:-L center1 center0) (HL:-L innerpoint center0)))
+            (progn
+              (setq ansp0 (HL:+L center0 eright))
+              (setq ansp1 (HL:+L right eright))
+              (if isflip
+                (cons ansp1 ansp0)
+                (cons ansp0 ansp1)
+              )        
+            )
+            (progn
+              (setq ansp0 (HL:+L center0 eleft))
+              (setq ansp1 (HL:+L left eleft))
+              (if isflip
+                (cons ansp1 ansp0)
+                (cons ansp0 ansp1)
+              )                
+            )
+        )
+      )
+  )
 )
 (defun HL:getCircleSplitPoints ( o / num start end points)
   (setq num HL:TAPERPROJECTIONSPLITNUM)
@@ -111,12 +125,19 @@
       )
   )  
 )
-(defun HL:_taperprojectionObject (object innerpoint a / points pointpairs)    
+(defun HL:_taperprojectionObject (object innerpoint a / points pointpairs p projectionpointpairs)    
   ;get points from object
   (setq points (HL:getObjectPoints object))      
   (setq pointpairs (HL:makepair points))  
   ;change points to projection point
-  (setq pointpairs (mapcar '(lambda (p) (HL:projection p a innerpoint)) pointpairs))
+  (foreach p pointpairs
+    (setq p (HL:projection p a innerpoint))
+    (if p
+      (setq projectionpointpairs (cons p projectionpointpairs))
+    )
+  )
+  (setq pointpairs (reverse projectionpointpairs))
+  ;(setq pointpairs (mapcar '(lambda (p) (HL:projection p a innerpoint)) pointpairs))
   ;connect projection pointpairs
   (setq pointpairs (HL:connectLines pointpairs (vlax-curve-isclosed (vlax-ename->vla-object object))))
   ;draw lines
@@ -129,7 +150,7 @@
       (quit)
     )
   )  
-  (HL:A_start)
+  ;(HL:A_start)
   ;get Objects
   (while (not objects)
     (setq objects (ssget '((0 . "ARC,CIRCLE,LINE,LWPOLYLINE,SPLINE,ELLIPSE,POLYLINE"))))
@@ -147,5 +168,5 @@
     ;change points to projection point and drawLines
     (HL:_taperprojectionObject object innerpoint a)
   )          
-  (HL:A_end)
+  ;(HL:A_end)
 )
