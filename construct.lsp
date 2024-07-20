@@ -1,0 +1,86 @@
+; ;getPolyLine's point list
+; (defun HL:getPolyPointList (e) (mapcar 'cdr (vl-remove-if-not '(lambda (x) (= (car x) 10)) (entget e))))
+; ;replacePolyLine's point list
+; (defun HL:replacePolyPointList (e plist) (append (vl-remove-if '(lambda (x) (= (car x) 10)) (entget e)) (mapcar '(lambda (y) (cons 10 y)) plist)))
+; ;make copy and create polyline
+; (defun HL:createPolyLine (e plist)
+;   (entmake (HL:replacePolyPointList e plist))
+; )
+; (defun HL:modifyPolyLine (e plist)
+;   (entmod (HL:replacePolyPointList e plist))
+; )
+; (defun HL:removeSamePoint (plist)
+;   (if (cdr plist)
+;     (if (HL:eqp (car plist) (cadr plist))
+;       (HL:removeSamePoint (cdr plist))
+;       (cons (car plist) (HL:removeSamePoint (cdr plist)))
+;     )
+;     plist
+;   )
+; )
+; ;make two polyline by spliting at given line at intersection points
+; (defun HL:splitPointList (plist sp ep / ret0 ret1 linepair lp interpoint preinterpoint intersectnumber)
+;   (setq ret nil)
+;   (setq linepair (mapcar 'cons plist (append (cdr plist) (list (car plist)))))
+;   (setq intersectnumber 0)
+;   (foreach lp linepair
+;     ;if intersect lp with sp-ep
+;     (if (<= intersectnumber 2)
+;       (progn
+;         (setq interpoint (inters sp ep (car lp) (cdr lp) T))     
+;         ;for intersecting at vertex of line, check if it is not same as previous intersect point
+;         (if (and interpoint (not (HL:eqp interpoint preinterpoint)))
+;             (progn
+;               (setq preinterpoint interpoint)
+;               (cond ((= intersectnumber 0) (setq ret0 (cons interpoint (cons (car lp) ret0)) ret1 (cons interpoint ret1) intersectnumber 1))
+;                     ((= intersectnumber 1) (setq ret1 (cons interpoint (cons (car lp) ret1)) ret0 (cons interpoint ret0) intersectnumber 2))
+;                     ((= intersectnumber 2) (setq ret0 nil ret1 nil intersectnumber 3))
+
+;               )
+;             )
+;             (cond ((= intersectnumber 0) (setq ret0 (cons (car lp) ret0)))
+;                   ((= intersectnumber 1) (setq ret1 (cons (car lp) ret1)))
+;                   ((= intersectnumber 2) (setq ret0 (cons (car lp) ret0)))
+;             )
+;         )
+;       )
+;     )
+;   )    
+;   (if (= intersectnumber 2)
+;       (cons (reverse (HL:removeSamePoint ret0)) (reverse (HL:removeSamePoint ret1)))
+;       nil
+;   )
+; )
+; (defun HL:testsplitPointList ( / plist sp ep ret polyent)
+;   (setq polyent (car (entsel "poly:")))
+;   (setq line (car (entsel "line:")))
+;   (setq plist (HL:getPolyPointList polyent))
+;   (setq sp (HL:take (HL:A_dxf 10 line) 2))
+;   (setq ep (HL:take (HL:A_dxf 11 line) 2))  
+;   (setq ret (HL:splitPointList plist sp ep))  
+;   (print ret)
+;   (if ret
+;     (progn (HL:modifyPolyLine polyent (car ret))
+;           (HL:createPolyLine polyent (cdr ret))  )
+;   )
+; )
+
+(defun HL:breakobjectandconnect ( cutename ename / intPoints tempPoint pl enames e e2 oldosmode)  
+  (if (not HL:breakclosed)
+      (load "breakall.lsp")
+  )
+  (setq pl (HL:getIntersectPoints cutename ename))
+  (setq oldosmode (getvar "OSMODE"))
+  (setvar "OSMODE" 0)
+  (if (and pl (= (length pl) 2))
+      (progn
+        (setq enames (HL:breakclosed ename (car pl) (cadr pl)))
+        (foreach e enames
+          (setq e2 (vlax-vla-object->ename (HL:drawLine (car pl) (cadr pl))))
+          (HL:joinAll (list e e2))
+        )
+      )
+  )
+  (setvar "OSMODE" oldosmode)
+)
+;(HL:testsplitPointList)
